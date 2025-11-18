@@ -13,23 +13,27 @@ services:
       - "5432:5432"
 
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      target: development
     environment:
       DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/finnow
       PORT: 3000
+    volumes:
+      - ./backend/src:/usr/src/app/src
     ports:
       - "3000:3000"
     depends_on:
       - postgres
 
-  frontend:
-    build: ./frontend
-    environment:
-      VITE_API_URL: http://localhost:3000
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
+  #frontend:
+  #  build: ./frontend
+  #  environment:
+  #    VITE_API_URL: http://localhost:3000
+  #  ports:
+  #    - "5173:5173"
+  #  depends_on:
+  #    - backend
 
 volumes:
   postgres_data:
