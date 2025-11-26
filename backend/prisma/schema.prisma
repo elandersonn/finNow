@@ -1,16 +1,21 @@
+// ============================================
+// finNow - Prisma Schema
+// SEM OAuth - Apenas JWT + Session + Reset Password
+// ============================================
+
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["views"] // Habilita suporte a Views do SQL
+  previewFeatures = ["views"]
+  
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// ==============================
+// ============================================
 // ENUMS
-// ==============================
+// ============================================
 
 enum UserRole {
   owner
@@ -53,25 +58,17 @@ enum AlertFrequency {
   percentage
 }
 
-enum OauthProvider {
-  google
-  github
-}
-
-// ==============================
-// MODELS (TABELAS)
-// ==============================
+// ============================================
+// MODELS
+// ============================================
 
 model User {
   id                       String    @id @default(uuid()) @db.Uuid
   email                    String    @unique
-  passwordHash             String?   @map("password_hash")
+  passwordHash             String    @map("password_hash")
   emailVerified            Boolean   @default(false) @map("email_verified")
   emailVerificationToken   String?   @map("email_verification_token")
   emailVerificationExpires DateTime? @map("email_verification_expires_at") @db.Timestamptz
-
-  oauthProvider   OauthProvider? @map("oauth_provider")
-  oauthProviderId String?        @map("oauth_provider_id")
 
   name              String
   nickname          String?
@@ -79,7 +76,7 @@ model User {
   nicknameChangedBy String?   @map("nickname_changed_by") @db.Uuid
 
   avatarUrl  String? @map("avatar_url")
-  avatarType String? @default("predefined") @map("avatar_type")
+  avatarType String  @default("predefined") @map("avatar_type")
 
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -93,7 +90,6 @@ model User {
   auditLogs           AuditLog[]
 
   @@index([email])
-  @@index([oauthProvider, oauthProviderId])
   @@map("users")
 }
 
@@ -113,9 +109,6 @@ model Account {
   transactions      Transaction[]
   budgets           Budget[]
   auditLogs         AuditLog[]
-
-  // View Relations (Opcional, para tipagem)
-  // accountBalances AccountBalance? 
 
   @@map("accounts")
 }
@@ -342,11 +335,10 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ==============================
-// VIEWS (Requer previewFeatures = ["views"])
-// ==============================
-// O Prisma não cria views automaticamente, você deve criá-las via SQL Migration
-// Mas você pode defini-las aqui para ter tipagem no TypeScript
+// ============================================
+// VIEWS
+// Serão criadas via SQL Migration separada
+// ============================================
 
 view AccountBalance {
   accountId     String  @unique @map("account_id") @db.Uuid
@@ -355,4 +347,29 @@ view AccountBalance {
   bankBalance   Decimal @map("bank_balance") @db.Decimal(15, 2)
 
   @@map("account_balances")
+}
+
+view MonthlyTransactionSummary {
+  accountId        String          @map("account_id") @db.Uuid
+  month            DateTime        @map("month") @db.Timestamptz
+  type             TransactionType @map("type")
+  transactionCount BigInt          @map("transaction_count")
+  totalAmount      Decimal         @map("total_amount") @db.Decimal(15, 2)
+  averageAmount    Decimal         @map("average_amount") @db.Decimal(15, 2)
+
+  @@unique([accountId, month, type])
+  @@map("monthly_transaction_summary")
+}
+
+view SpendingByCategory {
+  accountId        String   @map("account_id") @db.Uuid
+  categoryId       String   @map("category_id") @db.Uuid
+  categoryName     String   @map("category_name")
+  categoryColor    String   @map("category_color")
+  transactionCount BigInt   @map("transaction_count")
+  totalSpent       Decimal  @map("total_spent") @db.Decimal(15, 2)
+  month            DateTime @map("month") @db.Timestamptz
+
+  @@unique([accountId, categoryId, month])
+  @@map("spending_by_category")
 }

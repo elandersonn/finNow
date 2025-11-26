@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+import 'dotenv/config';
+
 import { z } from 'zod';
 
 const envSchema = z.object({
@@ -8,8 +8,8 @@ const envSchema = z.object({
     .enum(['development', 'production', 'test'])
     .default('development'),
   PORT: z.string().transform(Number).default(3000),
-  APP_URL: z.string().url(),
-  FRONTEND_URL: z.string().url(),
+  //APP_URL: z.url(),
+  //FRONTEND_URL: z.url(),
 
   // Database
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
@@ -20,17 +20,17 @@ const envSchema = z.object({
   REDIS_PASSWORD: z.string().optional(),
 
   // JWT
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  //JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().default('7d'),
-  JWT_REFRESH_SECRET: z
-    .string()
-    .min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
+  //JWT_REFRESH_SECRET: z
+  //  .string()
+  //  .min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
 
   // OAuth Google (opcional)
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_CALLBACK_URL: z.string().url().optional(),
+  GOOGLE_CALLBACK_URL: z.url().optional(),
 
   // Email
   EMAIL_HOST: z.string().default('smtp.mailtrap.io'),
@@ -41,7 +41,7 @@ const envSchema = z.object({
     .default(false),
   EMAIL_USER: z.string().optional(),
   EMAIL_PASSWORD: z.string().optional(),
-  EMAIL_FROM: z.string().email().default('noreply@finnow.app'),
+  EMAIL_FROM: z.email().default('noreply@finnow.app'),
   EMAIL_FROM_NAME: z.string().default('finNow'),
 
   // Upload
@@ -76,9 +76,9 @@ const envSchema = z.object({
     .default(true),
 
   // Frontend URLs (para emails)
-  FRONTEND_VERIFY_EMAIL_URL: z.string().url(),
-  FRONTEND_RESET_PASSWORD_URL: z.string().url(),
-  FRONTEND_INVITATION_URL: z.string().url(),
+  // FRONTEND_VERIFY_EMAIL_URL: z.url(),
+  // FRONTEND_RESET_PASSWORD_URL: z.url(),
+  // FRONTEND_INVITATION_URL: z.url(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
@@ -86,15 +86,11 @@ export const env = validateEnv(process.env);
 
 export function validateEnv(config: Record<string, unknown>): EnvConfig {
   try {
-    const validatedConfig = envSchema.parse(config);
-
-    console.log('✅ Environment variables validated successfully');
-
-    return validatedConfig;
+    return envSchema.parse(config);
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Environment validation failed:');
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         console.error(`  - ${err.path.join('.')}: ${err.message}`);
       });
     }

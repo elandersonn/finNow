@@ -6,25 +6,24 @@
 # ============================================
 # Stage 1: Development Dependencies
 # ============================================
-FROM node:20-alpine AS development
+FROM node:24-alpine AS development
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ openssl
 
 COPY package.json yarn.lock ./
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
 
-# 2. Usamos 'yarn install --frozen-lockfile' (equivalente ao npm ci)
-# Isso garante que as versões exatas do lockfile sejam instaladas
+COPY prisma ./prisma
 RUN yarn install --frozen-lockfile
+RUN npx prisma generate
 
 COPY src ./src
 
 EXPOSE 3000
 
-# 3. Comando de dev do yarn
 CMD ["yarn", "start:dev"]
 
 # ============================================
