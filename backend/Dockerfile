@@ -10,6 +10,8 @@ FROM node:24-alpine AS development
 
 WORKDIR /usr/src/app
 
+RUN sed -i 's/https/http/' /etc/apk/repositories
+
 RUN apk add --no-cache python3 make g++ openssl
 
 COPY package.json yarn.lock ./
