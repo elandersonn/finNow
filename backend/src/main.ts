@@ -4,15 +4,18 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AppConfigService } from './core/config/config.service';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   });
 
+  app.useLogger(app.get(Logger));
+  app.useGlobalInterceptors(new LoggerErrorInterceptor());
+
   const configService = app.get(AppConfigService);
 
-  // Configurar CORS
   app.enableCors({
     //origin: configService.frontendUrl,
     credentials: true,
@@ -20,13 +23,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Helmet - Segurança HTTP headers
   app.use(helmet());
 
-  // Global prefix
-  app.setGlobalPrefix('api');
-
-  // Validation Pipe global
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -38,7 +36,6 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger - Documentação da API
   if (configService.swaggerEnabled) {
     const config = new DocumentBuilder()
       .setTitle('finNow API')
